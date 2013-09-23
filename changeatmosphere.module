@@ -1,0 +1,204 @@
+<?php
+
+/**
+*** Implements hook_menu().
+ */
+
+function changeatmosphere_menu() {
+  $items['admin/settings/changeatmosphere'] = array(
+    'title' => 'Change Atmosphere Form',
+    'description' => 'Form for the Change Atmosphere module',
+    'page arguments' => array('changeatmosphere_form'),
+    'page callback' => 'drupal_get_form',
+
+    'access arguments' => array('administer changeatmosphere'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  return $items;
+}
+
+function changeatmosphere_permission() {
+  return array(
+    'administer changeatmosphere' => array(
+      'title' => t('Administer Change Atmosphere module'),
+      'description' => t('Configure Change Atmosphere settings.'),
+    ),
+  );
+}
+
+
+function changeatmosphere_form() {
+krumo('test');
+krumo(variable_get('changeatmosphere_morning_image'));
+  $form = array ();
+  $form['changeatmosphere_morning_image'] = array(
+      '#title' => t('Morning Image'),
+      '#description' => t('Choose here the image to be displayed in the morning.'),
+      '#type' => 'file',
+      '#default_value' => variable_get('changeatmosphere_morning_image', ''),
+      '#required' => false,
+      '#name' => 'files[changeatmosphere_morning_image]'
+      );
+  $form['changeatmosphere_afternoon_image'] = array(
+      '#title' => t('Afternoon Image'),
+      '#description' => t('Choose here the image to be displayed in the afternoon.'),
+      '#type' => 'file',
+      '#default_value' => variable_get('changeatmosphere_afternoon_image', ''),
+      '#required' => false,
+      );
+   $form['changeatmosphere_night_image'] = array(
+      '#title' => t('Night Image'),
+      '#description' => t('Choose here the image to be displayed during the night.'),
+      '#type' => 'file',
+      '#default_value' => variable_get('changeatmosphere_night_image', ''),
+      '#required' => false,
+      );
+   $form['submit'] = array(
+       '#type' => 'submit',
+       '#value' => t('Submit'),
+       );
+
+   //$form['#validate'][] = '_changeatmosphere_form_validate';
+   $form['#submit'][] = '_changeatmosphere_submit';
+
+   return $form;
+}
+
+function _changeatmosphere_form_validate($form, &$form_state) {
+  krumo($form);
+  krumo($form_state);
+
+
+  foreach($form_state['values'] as $imagefile => $nothing){
+    if (strpos($imagefile, 'changeatmosphere') !== false) {
+      $file = file_save_upload($imagefile, array(
+          'file_validate_is_image' => array(),
+          'file_validate_extensions' => array('jpg jpeg'),
+          ));
+
+            krumo("0");
+
+      if ($file) {
+        $changeatmosphere_dir = 'public://changeatmosphere/';
+
+        krumo("1");
+        if ($file = file_move($file, $changeatmosphere_dir)) {
+          $form_state['storage'][$imagefile] = $file;
+          $form_state['values'][$imagefile] = $file;
+
+                krumo("2");
+
+        }
+        else {
+          form_set_error('file', t('Failed to write the uploaded file in the site\'s file folder.'));
+        }
+      }
+      else {
+        form_set_error('file', t('No file was uploaded.'));
+      }
+    }
+  }
+
+  krumo($form);
+  krumo($form_state);
+}
+
+
+
+function _changeatmosphere_submit($form, &$form_state) {
+
+  krumo("test");
+  krumo($form);
+  krumo($form_state);
+    foreach($form_state['values'] as $imagefile => $nothing){
+    if (strpos($imagefile, 'changeatmosphere') !== false) {
+    $dest_dir = file_default_scheme() . '://changeatmosphere/';// Note: file_directory_path() was removed in Drupal 7.x. // $dest_dir contains the destination directory for the file.
+
+$validators = array('file_validate_extensions' => array('jpg jpeg'));
+
+//Save file
+if ($file = file_save_upload($imagefile, $validators, $dest_dir))
+{
+
+  variable_set("changeatmosphere_morning_image", $file->uri);
+    //$filename = $file->filename;
+
+  //  $file_content = file_get_contents($dest_dir.$filename); // Fatal error: Cannot access empty property in C:\xampp\htdocs\drupal\modules\custom\achievements\achievements.module on line 446
+}
+else
+{
+ //   form_set_error($imagefile, 'Could not upload file.');
+}
+      //     $validators = array();
+//       $dest_path = 'public://changeatmosphere';
+//       $file = file_save_upload('file_upload', $validators, $dest_path);
+    //$file will be 0 if the upload doesn't exist, or the $dest directory
+    //isn't writable
+//     if ($file != 0) {
+//       $result = file_copy($file, $dest_path, FILE_EXISTS_RENAME);
+//       if ($result == 1) {
+//         //Success, $file object will contain a different (renamed)
+//         //filename and filepath if the destination existed
+//       }
+//       else {
+//         //Failure
+//       }
+//     }
+//     else {
+//       form_set_error('changeatmosphere_form', t("Failed to save the file."));
+//     }
+//     $file = $form_state['values'][$imagefile];
+//     unset($form_state['values'][$imagefile]);
+//     $file->status = FILE_STATUS_PERMANENT;
+//     file_save($file);
+//     drupal_set_message(t('The form has been submitted'));
+  }}
+krumo($form);
+krumo($form_state);
+
+}
+
+
+function changeatmosphere_cron() {
+
+  function copy_image_for_time($time) {
+      $destimage = file_default_scheme() . '://changeatmosphere/changeatmosphere.jpg';
+      if ($time = 'morning') {
+        // copy morning image todest image.
+        file_unmanaged_copy(variable_get('changeatmosphere_morning_image'), $destimage, FILE_EXISTS_REPLACE);
+      }
+      elseif ($time = 'afternoon') {
+        //copy afternoon image to dest image.
+        file_unmanaged_copy(variable_get('changeatmosphere_afternoon_image'), $destimage, FILE_EXISTS_REPLACE);
+      }
+      elseif ($time = 'evening') {
+        //copy night image to dest image.
+        file_unmanaged_copy(variable_get('changeatmosphere_night_image'), $destimage, FILE_EXISTS_REPLACE);
+      }
+    }
+
+    $morningfrom = 40000;
+  $morningends = 120000;
+  $afternoonends = 190000;
+  $currentTime = (int) date('Gis');
+
+  if ($currentTime > $morningfrom && $currentTime < $morningends ){
+    copy_image_for_time('morning');
+  }
+  elseif ($currentTime > $morningends && $currentTime < $afternoonends){
+        copy_image_for_time('afternoon');
+  }
+  else {
+    copy_image_for_time('night');
+  }
+
+
+  // Short-running operation example, not using a queue:
+  // Delete all expired records since the last cron run.
+
+  //$newimage = variable_get('changeatmosphere_morning_image');
+  //condition('expires', $expires, '>=')->execute();
+  //variable_set('changeatmosphere_afternoon_image');
+}
+
+//hook install copy the three provided files to public directory and define those 3 variables as those imgs in pub fir

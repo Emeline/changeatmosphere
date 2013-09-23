@@ -1,0 +1,14 @@
+name = Change atmosphere
+
+description = "Change the image of the banner depending on the page you are on."
+
+package = Emeline Module
+
+core = 7.x
+
+files[] = changeatmosphere.module
+files[] = changeatmosphere.install
+files[] = changeatmosphere-content.tpl.php
+
+
+//stylesheets[all][] = changeatmosphere.css
